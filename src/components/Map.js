@@ -72,8 +72,8 @@ export default function Map() {
   }
 
   function latLongErrors(lat, long) {
-    const latInvalid = lat < -90 || lat > 90;
-    const longInvalid = long < -180 || long > 180;
+    const latInvalid = lat < -90 || lat > 90 || isNaN(lat);
+    const longInvalid = long < -180 || long > 180 || isNaN(long);
     if (latInvalid && longInvalid) {
       return setError("Invalid latitude and longitude");
     } else if (latInvalid) {
@@ -86,6 +86,16 @@ export default function Map() {
   }
 
   async function handleAddMarker(imageUpload) {
+    exifr.parse(imageUpload).then((output) => {
+      latLongErrors(output.latitude, output.longitude);
+      if (
+        !(output.DateTimeOriginal instanceof Date) ||
+        isNaN(output.DateTimeOriginal)
+      ) {
+        return setError("Invalid date");
+      }
+    });
+
     const markerId = uuidv4();
     const markerName = `${markerId}`;
     const markerRef = doc(db, "users", currentUserId, "markers", markerName);
@@ -273,8 +283,21 @@ export default function Map() {
 
   /** Calls handleAddMarker on each uploaded file upon submitting. */
   async function handleSubmit() {
+    const acceptedImageTypes = [
+      "image/jpg",
+      "image/tif",
+      "image/png",
+      "image/heic",
+      "image/avif",
+      "image/liq",
+      "image/jpeg",
+    ];
     if (imageUpload.length === 0) return;
     await imageUpload.forEach((file) => {
+      if (!acceptedImageTypes.includes(file.type)) {
+        console.log("file not accepted");
+        return;
+      }
       console.log("doing this thing");
       handleAddMarker(file);
     });
@@ -382,18 +405,6 @@ export default function Map() {
         >
           <MarkerList markers={markers} deleteMarker={deleteMarker} />
           <PolylineList lines={lines} />
-          {/* <Polyline
-            path={[
-              { lat: 37.772, lng: -122.214 },
-              { lat: 21.291, lng: -157.821 },
-            ]}
-            geodesic={true}
-            options={{
-              strokeColor: "#ff2527",
-              strokeOpacity: 0.75,
-              strokeWeight: 2,
-            }} */}
-          />
         </GoogleMap>
       </div>
     </div>
