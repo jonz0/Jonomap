@@ -3,8 +3,8 @@ import { useJsApiLoader, GoogleMap, Polyline } from "@react-google-maps/api";
 
 export default function Line(line) {
   const coordinates = [
-    { lat: line.lat1, lng: line.lng1 },
-    { lat: line.lat2, lng: line.lng2 },
+    { lat: line.line.lat1, lng: line.line.long1 },
+    { lat: line.line.lat2, lng: line.line.long2 },
   ];
 
   return (
