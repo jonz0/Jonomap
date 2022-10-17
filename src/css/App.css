@@ -1,0 +1,116 @@
+@import "https://fonts.googleapis.com/css2?family=Heebo:wght@100;300;400;500&family=Jost:wght@100;200;300;400&family=Playfair+Display:wght@400;500;600;700;800&display=swap";
+
+#auth-center {
+  width: 500px;
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0 auto;
+  left: 0;
+}
+
+#marker-image {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+}
+
+.gm-ui-hover-effect {
+  display: none !important;
+}
+
+#marker-info {
+  margin-bottom: 10px;
+}
+
+#country {
+  font-size: 14pt;
+}
+
+#delete-marker {
+  margin-top: 10px
+}
+
+/* .google-maps {
+  position: relative;
+  padding-bottom: 75%;
+  height: 0;
+  overflow: hidden;
+  }
+
+.google-maps iframe {
+position: absolute;
+top: 0;
+left: 0;
+width: 100% !important;
+height: 100% !important;
+}
+
+.map{max-width:40%;} */
+
+/* #map-container {
+  h: 
+} */
+
+#app-container {
+  position: "absolute";
+  display: flex;
+  height: 100%;
+  width: 100%;
+  flex-direction: row;
+}
+
+#map-container {
+  position: relative;
+  height: 1024px;
+  width: 75%;
+  max-width: 1024px;
+}
+
+#menu-container {
+  position: relative;
+  width: 30%;
+  max-width: 400px;
+  padding: 37px;
+}
+
+#image-input {
+  margin-bottom: 10px;
+}
+
+#header-1 {
+  margin-top: 10px;
+  margin-bottom: 50px;
+  font-family: "Playfair Display", serif;
+  font-weight: 600;
+  font-size: 35pt;
+}
+
+.form-label {
+  font-family: "Jost", sans-serif;
+  padding-bottom: 30px;
+}
+
+.form-control {
+  margin-top: 35px;
+  margin-bottom: 20px;
+}
+
+#submit-button {
+  align-self: center;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+#debug-button {
+  margin-left: 20px;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+#buttons {
+  width: 50%;
+  margin: 0 auto;
+
+}
