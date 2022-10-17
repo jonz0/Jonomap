@@ -64,6 +64,8 @@ export default function Map() {
   }, []);
 
   useEffect(() => {
+    console.log("calling useEffect");
+    setLines([]);
     handlePolylines();
   }, [markers]);
 
@@ -86,7 +88,7 @@ export default function Map() {
   }
 
   async function handleAddMarker(imageUpload) {
-    exifr.parse(imageUpload).then((output) => {
+    exifr.parse(imageUpload).then(async (output) => {
       latLongErrors(output.latitude, output.longitude);
       if (
         !(output.DateTimeOriginal instanceof Date) ||
@@ -94,118 +96,116 @@ export default function Map() {
       ) {
         return setError("Invalid date");
       }
-    });
+      const markerId = uuidv4();
+      const markerName = `${markerId}`;
+      const markerRef = doc(db, "users", currentUserId, "markers", markerName);
+      const imageHashes = collection(db, "users", currentUserId, "imageHashes");
+      let latitude = output.latitude;
+      let longitude = output.longitude;
+      let visitTime = output.DateTimeOriginal.getTime();
+      let imageHash = "",
+        city = "",
+        state = "",
+        country = "",
+        street = "",
+        postal = "";
+      // visitTime: output.DateTimeOriginal.toUTCString(),
 
-    const markerId = uuidv4();
-    const markerName = `${markerId}`;
-    const markerRef = doc(db, "users", currentUserId, "markers", markerName);
-    const imageHashes = collection(db, "users", currentUserId, "imageHashes");
-    let imageHash = "";
-
-    await getBase64(imageUpload)
-      .then((result) => {
-        imageUpload["base64"] = result;
-        imageHash = SHA3(result, { outputLength: 160 }).toString();
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-
-    checkDuplicateImages(imageHash).then((result) => {
-      if (result) {
-        return;
-      }
-      console.log("No duplicates");
-      setDoc(doc(imageHashes, imageHash), { exists: true }, { merge: false });
-
-      const imageName = `${currentUserId}/${markerId}-images/${imageHash}`;
-      const imageRef = ref(storage, imageName);
-
-      /** Uploads the passed image to Firestore under 'uid/markerId-images/', and
-       * also uploads a document containing marker information associated with
-       * the image to Firebase under 'users/uid/markers/markerId/'.
-       */
-      uploadBytes(imageRef, imageUpload).then((snapshot) => {
-        getDownloadURL(snapshot.ref).then(async (url) => {
-          // Marker error handling
-          const { latitude: lat, longitude: long } = await exifr.gps(url);
-          latLongErrors(lat, long);
-
-          let reverseGeoUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${long}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`;
-          fetch(reverseGeoUrl)
-            .then((response) => response.json())
-            .then((data) => {
-              let parts = data.results[0].address_components;
-              let city = "",
-                state = "",
-                country = "",
-                street = "",
-                postal = "";
-              parts.forEach((part) => {
-                switch (true) {
-                  case part.types.includes("country"):
-                    country = part.long_name;
-                    break;
-                  case part.types.includes("administrative_area_level_1"):
-                    state += part.long_name;
-                    break;
-                  case part.types.includes("locality"):
-                    city = part.long_name;
-                    break;
-                  case part.types.includes("street_number"):
-                    street += part.long_name;
-                    break;
-                  case part.types.includes("route"):
-                    street += " " + part.long_name;
-                    break;
-                  case part.types.includes("postal_code"):
-                    postal += part.long_name;
-                    break;
-                  default:
-                    console.log("error");
-                    break;
-                }
-              });
-
-              exifr.parse(url).then((output) => {
-                setDoc(
-                  markerRef,
-                  {
-                    latitude: output.latitude,
-                    longitude: output.longitude,
-                    street: street,
-                    city: city,
-                    state: state,
-                    country: country,
-                    postal: postal,
-                    visitTime: output.DateTimeOriginal.getTime(),
-                    // visitTime: output.DateTimeOriginal.toUTCString(),
-                    imagesRef: markerName + "-images",
-                    hash: imageHash,
-                  },
-                  { merge: false }
-                );
-
-                setMarkers((prevMarkers) => {
-                  let tempMarkers = [...prevMarkers];
-                  tempMarkers.push({
-                    key: markerId,
-                    latitude: lat,
-                    longitude: long,
-                    street: street,
-                    city: city,
-                    state: state,
-                    postal: postal,
-                    country: country,
-                    visitTime: output.DateTimeOriginal.getTime(),
-                  });
-                  return sortMarkers(tempMarkers);
-                });
-              });
-            })
-            .catch((err) => console.warn("reverse geocoding fetch error"));
+      await getBase64(imageUpload)
+        .then((result) => {
+          imageUpload["base64"] = result;
+          imageHash = SHA3(result, { outputLength: 160 }).toString();
+        })
+        .catch((err) => {
+          console.log(err);
         });
+
+      checkDuplicateImages(imageHash).then((result) => {
+        if (result) {
+          console.log("Duplicate image not uploaded");
+          return;
+        }
+        console.log("No duplicates");
+        setDoc(doc(imageHashes, imageHash), { exists: true }, { merge: false });
+
+        const imageName = `${currentUserId}/${markerName}-images/${imageHash}`;
+        const imageRef = ref(storage, imageName);
+
+        /** Uploads the passed image to Firestore under 'uid/markerId-images/', and
+         * also uploads a document containing marker information associated with
+         * the image to Firebase under 'users/uid/markers/markerId/'.
+         */
+        uploadBytes(imageRef, imageUpload);
       });
+
+      let reverseGeoUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}`;
+      fetch(reverseGeoUrl)
+        .then((response) => response.json())
+        .then((data) => {
+          let parts = data.results[0].address_components;
+
+          parts.forEach((part) => {
+            switch (true) {
+              case part.types.includes("country"):
+                country = part.long_name;
+                break;
+              case part.types.includes("administrative_area_level_1"):
+                state += part.long_name;
+                break;
+              case part.types.includes("locality"):
+                city = part.long_name;
+                break;
+              case part.types.includes("street_number"):
+                street += part.long_name;
+                break;
+              case part.types.includes("route"):
+                street += " " + part.long_name;
+                break;
+              case part.types.includes("postal_code"):
+                postal += part.long_name;
+                break;
+              default:
+                console.log("error");
+                break;
+            }
+          });
+
+          setDoc(
+            markerRef,
+            {
+              latitude: latitude,
+              longitude: longitude,
+              street: street,
+              city: city,
+              state: state,
+              country: country,
+              postal: postal,
+              visitTime: visitTime,
+              // visitTime: output.DateTimeOriginal.toUTCString(),
+              imagesRef: markerName + "-images/",
+            },
+            { merge: false }
+          );
+
+          setMarkers((prevMarkers) => {
+            console.log("setting markers...");
+            let tempMarkers = [...prevMarkers];
+            tempMarkers.push({
+              key: markerId,
+              latitude: latitude,
+              longitude: longitude,
+              street: street,
+              city: city,
+              state: state,
+              postal: postal,
+              country: country,
+              visitTime: visitTime,
+            });
+            console.log(tempMarkers);
+            return sortMarkers(tempMarkers);
+          });
+        })
+        .catch((err) => console.warn("reverse geocoding fetch error"));
     });
   }
 
@@ -254,7 +254,6 @@ export default function Map() {
         return [
           ...prevLines,
           {
-            lit: "wanksauce",
             lat1: parseFloat(firstSnapshot.data().latitude),
             long1: parseFloat(firstSnapshot.data().longitude),
             lat2: parseFloat(nextSnapshot.data().latitude),
@@ -324,7 +323,6 @@ export default function Map() {
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      console.log("Duplicate image not uploaded");
       return true;
     }
     return false;
