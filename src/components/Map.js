@@ -25,6 +25,8 @@ import { retroStyle } from "../styles/Retro";
 import { auburgineStyle } from "../styles/Auburgine";
 import { eyesBurningStyle } from "../styles/EyesBurning";
 import PolylineList from "./PolylineList";
+import ButtonGroup from "react-bootstrap/ButtonGroup";
+import ButtonToolbar from "react-bootstrap/ButtonToolbar";
 
 export default function Map() {
   const [markers, setMarkers] = useState([]);
@@ -37,7 +39,7 @@ export default function Map() {
   const { currentUser, logout } = useAuth();
   const currentUserId = currentUser.uid;
   const markerCollectionRef = collection(db, "users", currentUserId, "markers");
-  const [style, setStyle] = useState(null);
+  const [style, setStyle] = useState();
 
   useEffect(() => {
     console.log("calling useEffect");
@@ -184,7 +186,7 @@ export default function Map() {
               postal: postal,
               visitTime: visitTime,
               // visitTime: output.DateTimeOriginal.toUTCString(),
-              imagesRef: markerName + "-images/",
+              imagesRef: markerName + "-images",
               hash: imageHash,
             },
             { merge: false }
@@ -341,6 +343,18 @@ export default function Map() {
     );
   }
 
+  function handleSelectChange(event) {
+    if (event.target.value == "default") {
+      setStyle();
+    } else if (event.target.value == "retro") {
+      setStyle(retroStyle);
+    } else if (event.target.value == "auburgine") {
+      setStyle(auburgineStyle);
+    } else if (event.target.value == "burn") {
+      setStyle(eyesBurningStyle);
+    }
+  }
+
   return (
     <div id="app-container">
       <div id="menu-container">
@@ -381,66 +395,12 @@ export default function Map() {
           </button>
         </div>
         <div id="radio-section">
-          {/* <div class="form-check">
-            <input
-              class="form-check-input"
-              type="radio"
-              name="flexRadioDefault"
-              id="flexRadioDefault2"
-              // checked={setStyle()}
-            />
-            <label class="form-check-label" for="flexRadioDefault2">
-              Default Style
-            </label>
-          </div>
-          <div class="form-check">
-            <input
-              class="form-check-input"
-              type="radio"
-              name="flexRadioDefault"
-              id="flexRadioDefault1"
-              onChange={console.log("yes")}
-            />
-            <label class="form-check-label" for="flexRadioDefault1">
-              Retro Style
-            </label>
-          </div>
-          <div class="form-check">
-            <input
-              class="form-check-input"
-              type="radio"
-              name="flexRadioDefault"
-              id="flexRadioDefault1"
-              // checked={setStyle(auburgineStyle)}
-            />
-            <label class="form-check-label" for="flexRadioDefault1">
-              Auburgine Style
-            </label>
-          </div>
-          <div class="form-check">
-            <input
-              class="form-check-input"
-              type="radio"
-              name="flexRadioDefault"
-              id="flexRadioDefault1"
-              // checked={setStyle(eyesBurningStyle)}
-            />
-            <label class="form-check-label" for="flexRadioDefault1">
-              EyesBurning
-            </label>
-          </div> */}
-          <Form.Group>
-            <Form.Check type={"checkbox"}>
-              <Form.Check.Input
-                type={"checkbox"}
-                defaultChecked={true}
-                onClick={(e) => {
-                  setStyle(auburgineStyle);
-                }}
-              />
-              <Form.Check.Label>Awesome checkbox here..</Form.Check.Label>
-            </Form.Check>
-          </Form.Group>
+          <select onClick={handleSelectChange}>
+            <option value="default">Default</option>
+            <option value="retro">Retro</option>
+            <option value="auburgine">Auburgine</option>
+            <option value="burn">EyesBurning</option>
+          </select>
         </div>
       </div>
       <div id="map-container">
@@ -451,7 +411,7 @@ export default function Map() {
             mapTypeId: "terrain",
             streetViewControl: false,
             mapTypeControl: false,
-            styles: { style },
+            styles: style,
             minZoom: 2,
             restriction: {
               latLngBounds: {
