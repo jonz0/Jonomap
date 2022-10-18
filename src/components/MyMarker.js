@@ -39,18 +39,16 @@ export default function MyMarker({ marker, deleteMarker }) {
   }, []);
 
   async function fetchImagesRef() {
-    // console.log("fetching...");
-    // console.log("marker position: " + markerPos.lat + ", " + markerPos.lng);
     const docSnap = await getDoc(markerRef);
-    const images = `${currentUserId}/${docSnap.data().imagesRef}/`;
-    // console.log(docSnap.exists());
-    // console.log(imagesRef);
+    const images = `${currentUserId}/${marker.imagesRef}`;
 
     if (docSnap.exists()) {
       listAll(ref(storage, images)).then((response) => {
         response.items.forEach((item) => {
           getDownloadURL(item).then((url) => {
-            setImageList((prev) => [...prev, url]);
+            if (!imageList.includes(url)) {
+              setImageList((prev) => [...prev, url]);
+            }
           });
         });
       });
@@ -60,11 +58,7 @@ export default function MyMarker({ marker, deleteMarker }) {
   }
 
   async function handlePopupShowing() {
-    // if (popupShowing) {
-    //   console.log("popup showing");
-    // } else {
-    //   console.log("popup hidden");
-    // }
+    fetchImagesRef();
     setPopupShowing(!popupShowing);
   }
 

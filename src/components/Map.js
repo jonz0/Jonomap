@@ -37,6 +37,7 @@ export default function Map() {
   const { currentUser, logout } = useAuth();
   const currentUserId = currentUser.uid;
   const markerCollectionRef = collection(db, "users", currentUserId, "markers");
+  const [style, setStyle] = useState(null);
 
   useEffect(() => {
     console.log("calling useEffect");
@@ -55,6 +56,7 @@ export default function Map() {
           postal: doc.data().postal,
           country: doc.data().country,
           visitTime: doc.data().visitTime,
+          imagesRef: doc.data().imagesRef,
         });
       });
 
@@ -183,6 +185,7 @@ export default function Map() {
               visitTime: visitTime,
               // visitTime: output.DateTimeOriginal.toUTCString(),
               imagesRef: markerName + "-images/",
+              hash: imageHash,
             },
             { merge: false }
           );
@@ -191,7 +194,7 @@ export default function Map() {
             console.log("setting markers...");
             let tempMarkers = [...prevMarkers];
             tempMarkers.push({
-              key: markerId,
+              key: markerName,
               latitude: latitude,
               longitude: longitude,
               street: street,
@@ -200,6 +203,7 @@ export default function Map() {
               postal: postal,
               country: country,
               visitTime: visitTime,
+              imagesRef: markerName + "-images/",
             });
             console.log(tempMarkers);
             return sortMarkers(tempMarkers);
@@ -376,6 +380,68 @@ export default function Map() {
             Debug
           </button>
         </div>
+        <div id="radio-section">
+          {/* <div class="form-check">
+            <input
+              class="form-check-input"
+              type="radio"
+              name="flexRadioDefault"
+              id="flexRadioDefault2"
+              // checked={setStyle()}
+            />
+            <label class="form-check-label" for="flexRadioDefault2">
+              Default Style
+            </label>
+          </div>
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="radio"
+              name="flexRadioDefault"
+              id="flexRadioDefault1"
+              onChange={console.log("yes")}
+            />
+            <label class="form-check-label" for="flexRadioDefault1">
+              Retro Style
+            </label>
+          </div>
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="radio"
+              name="flexRadioDefault"
+              id="flexRadioDefault1"
+              // checked={setStyle(auburgineStyle)}
+            />
+            <label class="form-check-label" for="flexRadioDefault1">
+              Auburgine Style
+            </label>
+          </div>
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="radio"
+              name="flexRadioDefault"
+              id="flexRadioDefault1"
+              // checked={setStyle(eyesBurningStyle)}
+            />
+            <label class="form-check-label" for="flexRadioDefault1">
+              EyesBurning
+            </label>
+          </div> */}
+          <Form.Group>
+            <Form.Check type={"checkbox"}>
+              <Form.Check.Input
+                type={"checkbox"}
+                defaultChecked={true}
+                onClick={(e) => {
+                  setStyle(auburgineStyle);
+                }}
+              />
+              <Form.Check.Label>Awesome checkbox here..</Form.Check.Label>
+            </Form.Check>
+          </Form.Group>
+        </div>
       </div>
       <div id="map-container">
         <GoogleMap
@@ -385,7 +451,7 @@ export default function Map() {
             mapTypeId: "terrain",
             streetViewControl: false,
             mapTypeControl: false,
-            styles: retroStyle,
+            styles: { style },
             minZoom: 2,
             restriction: {
               latLngBounds: {
