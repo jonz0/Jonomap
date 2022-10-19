@@ -118,3 +118,11 @@ height: 100% !important;
 #radio-section {
   margin-top: 30px;
 }
+
+#styles-header {
+  margin-bottom: 20px;
+  font-family: "Playfair Display", serif;
+  font-weight: 600;
+  font-size: 20pt;
+}
+

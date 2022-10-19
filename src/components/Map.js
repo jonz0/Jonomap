@@ -344,13 +344,13 @@ export default function Map() {
   }
 
   function handleSelectChange(event) {
-    if (event.target.value == "default") {
+    if (event.target.value === "default") {
       setStyle();
-    } else if (event.target.value == "retro") {
+    } else if (event.target.value === "retro") {
       setStyle(retroStyle);
-    } else if (event.target.value == "auburgine") {
+    } else if (event.target.value === "auburgine") {
       setStyle(auburgineStyle);
-    } else if (event.target.value == "burn") {
+    } else if (event.target.value === "burn") {
       setStyle(eyesBurningStyle);
     }
   }
@@ -395,6 +395,7 @@ export default function Map() {
           </button>
         </div>
         <div id="radio-section">
+          <h1 id="styles-header">Map Styles</h1>
           <select onClick={handleSelectChange}>
             <option value="default">Default</option>
             <option value="retro">Retro</option>
