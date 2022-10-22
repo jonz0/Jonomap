@@ -27,6 +27,8 @@ import { eyesBurningStyle } from "../styles/EyesBurning";
 import PolylineList from "./PolylineList";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
 import ButtonToolbar from "react-bootstrap/ButtonToolbar";
+import Dropdown from "react-bootstrap/Dropdown";
+import DropdownButton from "react-bootstrap/DropdownButton";
 
 export default function Map() {
   const [markers, setMarkers] = useState([]);
@@ -40,6 +42,7 @@ export default function Map() {
   const currentUserId = currentUser.uid;
   const markerCollectionRef = collection(db, "users", currentUserId, "markers");
   const [style, setStyle] = useState();
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     console.log("calling useEffect");
@@ -68,9 +71,14 @@ export default function Map() {
   }, []);
 
   useEffect(() => {
-    console.log("calling useEffect");
-    setLines([]);
-    handlePolylines();
+    setLoading(true);
+    async function loadInitial() {
+      console.log("calling useEffect");
+      setLines([]);
+      await handlePolylines();
+      setLoading(false);
+    }
+    loadInitial();
   }, [markers]);
 
   if (!isLoaded) {
@@ -230,9 +238,11 @@ export default function Map() {
   }
 
   async function handlePolylines() {
+    // setLoading(true);
     console.log("handling polylines with " + markers.length + " markers.");
     if (markers.length < 2) {
       console.log("There are only " + markers.length + " markers.");
+      setLoading(false);
       return;
     }
 
@@ -268,6 +278,8 @@ export default function Map() {
         ];
       });
     }
+
+    // setLoading(false);
   }
 
   /** Encodes a given image into a Base64 binary format. */
@@ -298,14 +310,17 @@ export default function Map() {
       "image/jpeg",
     ];
     if (imageUpload.length === 0) return;
-    await imageUpload.forEach((file) => {
-      if (!acceptedImageTypes.includes(file.type)) {
-        console.log("file not accepted");
-        return;
-      }
-      console.log("doing this thing");
-      handleAddMarker(file);
-    });
+    setLoading(true);
+    await imageUpload
+      .forEach((file) => {
+        if (!acceptedImageTypes.includes(file.type)) {
+          console.log("file not accepted");
+          return;
+        }
+        console.log("doing this thing");
+        handleAddMarker(file);
+      })
+      .then(setLoading(false));
   }
 
   /** Debug button (remove on production) */
@@ -343,20 +358,8 @@ export default function Map() {
     );
   }
 
-  function handleSelectChange(event) {
-    if (event.target.value === "default") {
-      setStyle();
-    } else if (event.target.value === "retro") {
-      setStyle(retroStyle);
-    } else if (event.target.value === "auburgine") {
-      setStyle(auburgineStyle);
-    } else if (event.target.value === "burn") {
-      setStyle(eyesBurningStyle);
-    }
-  }
-
   return (
-    <div id="app-container">
+    <body id="app-container">
       <div id="menu-container">
         <h1 id="header-1">EXIF Mapper</h1>
         <div className="mb-3">
@@ -396,42 +399,80 @@ export default function Map() {
         </div>
         <div id="radio-section">
           <h1 id="styles-header">Map Styles</h1>
-          <select onClick={handleSelectChange}>
-            <option value="default">Default</option>
+          <Form.Select
+            aria-label="Default select example"
+            onChange={(event) => {
+              if (event.target.value === "default") {
+                setStyle();
+              } else if (event.target.value === "retro") {
+                setStyle(retroStyle);
+              } else if (event.target.value === "auburgine") {
+                setStyle(auburgineStyle);
+              } else if (event.target.value === "burn") {
+                setStyle(eyesBurningStyle);
+              }
+            }}
+          >
+            <option
+              value="default"
+              onClick={() => {
+                console.log("hello");
+              }}
+            >
+              Default
+            </option>
             <option value="retro">Retro</option>
             <option value="auburgine">Auburgine</option>
             <option value="burn">EyesBurning</option>
-          </select>
+          </Form.Select>
         </div>
       </div>
       <div id="map-container">
-        <GoogleMap
-          zoom={1}
-          // minZoom={4}
-          options={{
-            mapTypeId: "terrain",
-            streetViewControl: false,
-            mapTypeControl: false,
-            styles: style,
-            minZoom: 2,
-            restriction: {
-              latLngBounds: {
-                north: 85,
-                south: -85,
-                west: -180,
-                east: 180,
+        <div id="loading-container">
+          <div className="loading-screen">
+            <div class="lds-roller">
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+            </div>
+            <p className="loading-text">Loading...</p>
+          </div>
+        </div>
+        <div class="map-container"></div>
+        {!loading && (
+          <GoogleMap
+            zoom={1}
+            // minZoom={4}
+            options={{
+              mapTypeId: "terrain",
+              streetViewControl: false,
+              mapTypeControl: false,
+              styles: style,
+              minZoom: 2,
+              restriction: {
+                latLngBounds: {
+                  north: 85,
+                  south: -85,
+                  west: -180,
+                  east: 180,
+                },
+                strictBounds: false,
               },
-              strictBounds: false,
-            },
-            // draggable: false,
-          }}
-          mapContainerStyle={{ width: "100%", height: "100%" }}
-          center={{ lat: 0, lng: 0 }}
-        >
-          <MarkerList markers={markers} deleteMarker={deleteMarker} />
-          <PolylineList lines={lines} />
-        </GoogleMap>
+              // draggable: false,
+            }}
+            mapContainerStyle={{ width: "100%", height: "100%" }}
+            center={{ lat: 0, lng: 0 }}
+          >
+            <MarkerList markers={markers} deleteMarker={deleteMarker} />
+            <PolylineList lines={lines} />
+          </GoogleMap>
+        )}
       </div>
-    </div>
+    </body>
   );
 }
